@@ -97,28 +97,28 @@ console.log(firstOccurence("b", "abcd"));
 function lastOccurence(string, character) {
     for (var i = string.length; i > 0; i--) {
         if (character === string[i]) {
-            return i;
+            return i + 1;
         }
     }
     return -1;
 }
-console.log(lastOccurence("sdadda", "a"));
+console.log(lastOccurence("gfdsah", "a"));
 
 
 //or
 
 
-function lastOccurence(string, character) {
+function lastOccurence(string, letter) {
     for (var i = 0; i < string.length; i++) {
         var lastPosition;
         if (string[i] === letter) {
-            lastPosition = i;
+            lastPosition = i + 1;
         }
     }
     return lastPosition ? lastPosition : -1;
 }
 
-console.log(lastOccurence("lastocc", "o"));
+console.log(lastOccurence("stringo", "o"));
 
 
 
