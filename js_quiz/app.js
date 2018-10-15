@@ -1,6 +1,7 @@
-function populate () {
-    if(quiz.isEnded()) {
+function populate() {
+    if (quiz.isEnded()) {
         showScore();
+      
     }
     else {
         // show question
@@ -9,14 +10,17 @@ function populate () {
 
         //show choices
         var choices = quiz.getQuestionIndex().choices;
-        for(var i = 0; i < choices.length; i++) {
+        for (var i = 0; i < choices.length; i++) {
             var element = document.getElementById("choice" + i);
             element.innerHTML = choices[i];
-            guess("btn" + i, choices[i]); 
+            guess("btn" + i, choices[i]);
         }
+        showScoreDuringTheQuiz()
         showProgress();
+      
     }
 };
+
 
 function guess(id, guess) {
     var button = document.getElementById(id);
@@ -30,20 +34,28 @@ function showProgress() {
     var currentQuestionNumber = quiz.questionIndex + 1;
     var element = document.getElementById("progress");
     element.innerHTML = `Question ${currentQuestionNumber} of ${quiz.questions.length}
-    ` 
+    `
 };
+
+function showScoreDuringTheQuiz() {
+    var currentScore = document.getElementById("current-score");
+    currentScore.innerHTML = `
+    Your current score is: ${quiz.score}
+    `
+}
 
 function showScore() {
     // var gameOverHtml = "<h1>Result</h1>";
     // gameOverHtml += "<h2 id='score'> Your score is:  " + quiz.score + "</h2>";
     // var element = document.getElementById("quiz");
     // element.innerHTML = gameOverHtml;
-
+    
     var gameOverHtml = document.querySelector("#quiz");
     gameOverHtml.innerHTML = `
     <h1>Result</h1>
     <br>
-    <h2> Your score is: ${quiz.score}</h2>
+    <h2> Your score is: ${quiz.score}/4</h2>
+    <button><a href="index.html">Reset</a></button>
     `
 };
 
