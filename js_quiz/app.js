@@ -55,7 +55,7 @@ function showScore() {
     <h1>Result</h1>
     <br>
     <h2> Your score is: ${quiz.score}/4</h2>
-    <button><a href="index.html">Reset</a></button>
+    <button><a href="index.html">Play again?</a></button>
     `
 };
 
