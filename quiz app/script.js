@@ -191,7 +191,24 @@ var UIController = (function () {
                 domItems.questsClearBtn.style.pointerEvents = 'none'; //disable clear list btn
 
                 addInpsDynFn();
+                
+                var backDefaultView = function() {
+                    var updatedOptions; 
 
+                    domItems.newQuestionText.value='';
+                    updatedOptions = document.querySelectorAll(".admin-option");
+
+                    for(var i = 0; i < updatedOptions.length; i++) {
+                        updatedOptions[i].value = "";
+                        updatedOptions[i].previousElementSibling.checked = false;
+                    }
+                    domItems.questUpdateBtn.style.visibility = 'hidden';
+                    domItems.questDeleteBtn.style.visibility = 'hidden';
+                    domItems.questInsertBtn.style.visibility = 'visible';
+                    domItems.questsClearBtn.style.pointerEvents = '';
+
+                    updateQuestListFn(storageQuestList);
+                }
                 var updateQuestion = function () {
                     var newOptions, optionEls;
                     newOptions = [];
@@ -218,16 +235,7 @@ var UIController = (function () {
                                 storageQuestList.setQuestionCollection(getStorageQuestList);
                                 domItems.newQuestionText.value = "";
 
-                                for(var i = 0; i < optionEls.length; i++) {
-                                    optionEls[i].value = "";
-                                    optionEls[i].previousElementSibling.checked = false;
-                                }
-                                domItems.questUpdateBtn.style.visibility = 'hidden';
-                                domItems.questDeleteBtn.style.visibility = 'hidden';
-                                domItems.questInsertBtn.style.visibility = 'visible';
-                                domItems.questsClearBtn.style.pointerEvents = '';
-
-                                updateQuestListFn(storageQuestList);
+                                backDefaultView();
 
                             } else {
                                 alert('You missed to check correct answer, or you checked answer without value');
@@ -241,6 +249,15 @@ var UIController = (function () {
                 }
 
             domItems.questUpdateBtn.onclick = updateQuestion;
+            
+            var deleteQuestion = function() {
+
+                getStorageQuestList.splice(placeInArray, 1);// brisemo iz LS,ali ne i sa UI
+                storageQuestList.setQuestionCollection(getStorageQuestList) //vracamo promijenjen array, bez ovog sto smo obrisali
+                backDefaultView();
+            }
+
+            domItems.questDeleteBtn.onclick = deleteQuestion;
         }
 
     }
