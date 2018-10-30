@@ -29,8 +29,43 @@ var quizController = (function () {
         questionLocalStorage.setQuestionCollection([])
     }  //da pripremimo LS kad otvorimo app da ne bude null, cant read property length of null
 
-    return {
+    var quizProgress = {
+        questionIndex: 0
+    };
 
+    function Person(id, firstName, lastName, score) {
+        this.id = id;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.score = score;
+    }
+
+    var currPersonData = {
+        fullName: [],
+        score: 0
+    };
+
+    var adminFullName = ["John", "Smith"];
+
+    var personLocalStorage = {
+        setPersonData: function (newPersonData) {
+            localStorage.setItem("personData", JSON.stringify(newPersonData))
+        },
+        getPersonData: function () {
+            return JSON.parse(localStorage.getItem("personData"));
+        },
+        removePersonData: function () {
+            localStorage.removeItem("personData");
+        }
+    }
+
+    if (personLocalStorage.getPersonData() === null) {
+        personLocalStorage.setPersonData([]);
+    }
+
+
+    return {
+        getQuizProgress: quizProgress,
         getQuestionLocalStorage: questionLocalStorage,
         addQuestionOnLocalStorage: function (newQuestText, opts) {
             var optionsArr, corrAns, questionId, newQuestion, getStoredQuestions, isChecked;
@@ -93,7 +128,37 @@ var quizController = (function () {
                 alert('Please insert question');
                 return false;
             }
-        }
+        },
+
+        checkAnswer: function (ans) {
+            if (questionLocalStorage.getQuestionCollection()[quizProgress.questionIndex].correctAnswer === ans.textContent) {
+                currPersonData.score++;
+                return true;
+            } else {
+                return false;
+            }
+        },
+
+        isFinished: function () {
+            return quizProgress.questionIndex + 1 === questionLocalStorage.getQuestionCollection().length;
+        },
+
+        addPerson: function () {
+            var newPerson, personId;
+            if (personLocalStorage.getPersonData().length > 0) {
+                personId = personLocalStorage.getPersonData()[personLocalStorage.getPersonData().length - 1].id + 1;
+            } else {
+                personId = 0;
+            }
+            newPerson = new Person(personId, currPersonData.fullName[0], currPersonData.fullName[1], currPersonData.score);
+
+            personData = personLocalStorage.getPersonData();
+            personData.push(newPerson);
+            personLocalStorage.setPersonData(personData);
+        },
+        getCurrPersonData: currPersonData,
+        getAdminFullName: adminFullName,
+        getPersonLocalStorage: personLocalStorage,
     };
 
 })();
@@ -107,6 +172,7 @@ var UIController = (function () {
 
     var domItems = {
         //*******Admin Panel Elements****/
+        adminPanelSection: document.querySelector(".admin-panel-container"),
         questInsertBtn: document.getElementById("question-insert-btn"), //insertbtn
         newQuestionText: document.getElementById("new-question-text"), //textarea
         adminOptions: document.querySelectorAll(".admin-option"),
@@ -115,7 +181,30 @@ var UIController = (function () {
         questUpdateBtn: document.getElementById("question-update-btn"),
         questDeleteBtn: document.getElementById("question-delete-btn"),
         questsClearBtn: document.getElementById("question-clear-btn"),
+        resultsListWrapper: document.querySelector(".results-list-wrapper"),
+        clearResultsBtn: document.getElementById("results-clear-btn"),
+        //********quiz section elements
+        quizSection: document.querySelector(".quiz-container"),
+        askedQuestText: document.getElementById("asked-question-text"),
+        quizOptionsWrapper: document.querySelector(".quiz-options-wrapper"),
+        progressBar: document.querySelector("progress"),
+        progressPar: document.getElementById("progress"),
+        instAnsContainer: document.querySelector(".instant-answer-container"),
+        instAnsText: document.getElementById("instant-answer-text"),
+        instAnsDiv: document.getElementById("instant-answer-wrapper"),
+        emotionIcon: document.getElementById("emotion"),
+        nextQuestBtn: document.getElementById("next-question-btn"),
+        //****landing page elements */
+        landingPageSection: document.querySelector(".landing-page-container"),
+        startQuizBtn: document.getElementById("start-quiz-btn"),
+        firstNameInput: document.getElementById("firstname"),
+        lastNameInput: document.getElementById("lastname"),
+        //**********final result section elements */
+        finalScoreText: document.getElementById("final-score-text"),
+        finalResultSection: document.querySelector(".final-result-container"),
+
     };
+
 
     return {
         getDomItems: domItems,
@@ -191,14 +280,14 @@ var UIController = (function () {
                 domItems.questsClearBtn.style.pointerEvents = 'none'; //disable clear list btn
 
                 addInpsDynFn();
-                
-                var backDefaultView = function() {
-                    var updatedOptions; 
 
-                    domItems.newQuestionText.value='';
+                var backDefaultView = function () {
+                    var updatedOptions;
+
+                    domItems.newQuestionText.value = '';
                     updatedOptions = document.querySelectorAll(".admin-option");
 
-                    for(var i = 0; i < updatedOptions.length; i++) {
+                    for (var i = 0; i < updatedOptions.length; i++) {
                         updatedOptions[i].value = "";
                         updatedOptions[i].previousElementSibling.checked = false;
                     }
@@ -248,36 +337,159 @@ var UIController = (function () {
                     }
                 }
 
-            domItems.questUpdateBtn.onclick = updateQuestion;
-            
-            var deleteQuestion = function() {
+                domItems.questUpdateBtn.onclick = updateQuestion;
 
-                getStorageQuestList.splice(placeInArray, 1);// brisemo iz LS,ali ne i sa UI
-                storageQuestList.setQuestionCollection(getStorageQuestList) //vracamo promijenjen array, bez ovog sto smo obrisali
-                backDefaultView();
-            }
+                var deleteQuestion = function () {
 
-            domItems.questDeleteBtn.onclick = deleteQuestion;
-        }
-
-    },
-
-    clearQuestList: function(storageQuestList) { //access on LS
-        if(storageQuestList.getQuestionCollection() !== null) {
-            if(storageQuestList.getQuestionCollection().length > 0) { //LENGTH OF QUESTION LIST ARRAY
-                var conf= confirm("Warning! You will lose entire question list");
-            
-                if(conf) {
-                    storageQuestList.removeQuestionCollection();
-                    domItems.insertedQuestsWrapper.innerHTML = '';
+                    getStorageQuestList.splice(placeInArray, 1);// brisemo iz LS,ali ne i sa UI
+                    storageQuestList.setQuestionCollection(getStorageQuestList) //vracamo promijenjen array, bez ovog sto smo obrisali
+                    backDefaultView();
                 }
-            
+
+                domItems.questDeleteBtn.onclick = deleteQuestion;
+            }
+
+        },
+
+        clearQuestList: function (storageQuestList) { //access on LS
+            if (storageQuestList.getQuestionCollection() !== null) {
+                if (storageQuestList.getQuestionCollection().length > 0) { //LENGTH OF QUESTION LIST ARRAY
+                    var conf = confirm("Warning! You will lose entire question list");
+
+                    if (conf) {
+                        storageQuestList.removeQuestionCollection();
+                        domItems.insertedQuestsWrapper.innerHTML = '';
+                    }
+
+                }
+            }
+        },
+
+        displayQuestion: function (storageQuestList, progress) {
+            var newOptionHTML, characterArr;
+            characterArr = ['A', 'B', 'C', 'D', 'E', 'F'];
+            if (storageQuestList.getQuestionCollection().length > 0) {
+                domItems.askedQuestText.textContent = storageQuestList.getQuestionCollection()[progress.questionIndex].questionText;
+                domItems.quizOptionsWrapper.innerHTML = "";
+                for (var i = 0; i < storageQuestList.getQuestionCollection()[progress.questionIndex].options.length; i++) {
+
+                    newOptionHTML = '<div class="choice-' + i + '"><span class="choice-' + i + '">' + characterArr[i] + '</span><p  class="choice-' + i + '">' + storageQuestList.getQuestionCollection()[progress.questionIndex].options[i] + '</p></div>';
+
+                    domItems.quizOptionsWrapper.insertAdjacentHTML('beforeend', newOptionHTML);
+                }
+            }
+        },
+
+        displayProgress: function (storageQuestList, progress) {
+            domItems.progressBar.max = storageQuestList.getQuestionCollection().length;
+            domItems.progressBar.value = progress.questionIndex + 1;
+            domItems.progressPar.textContent = (progress.questionIndex + 1) + '/' + storageQuestList.getQuestionCollection().length;
+        },
+        newDesign: function (ansResult, selectedAnswer) {
+            var twoOptions, index;
+
+            index = 0;
+
+            if (ansResult) {
+                index = 1;
+            }
+
+            twoOptions = {
+                instAnswerText: ['This is a wrong answer', "This is a correct answer"],
+                instAnswerClass: ['red', 'green'],
+                emotionType: ['images/sad.png', 'images/happy.png'],
+                optionSpanBg: ["rgba(200, 0, 0, .7)", "rgba(0, 250, 0, .2"],
+            };
+
+            domItems.quizOptionsWrapper.style.cssText = "opacity: 0.6; pointer-events: none;";
+            domItems.instAnsContainer.style.opacity = "1";
+            domItems.instAnsText.textContent = twoOptions.instAnswerText[index];
+
+            domItems.instAnsDiv.className = twoOptions.instAnswerClass[index];
+
+            domItems.emotionIcon.setAttribute("src", twoOptions.emotionType[index]);
+
+            selectedAnswer.previousElementSibling.style.backgroundColor = twoOptions.optionSpanBg[index];
+        },
+        resetDesign: function () {
+            domItems.quizOptionsWrapper.style.cssText = "";
+            domItems.instAnsContainer.style.opacity = "0";
+        },
+
+        getFullName: function (currPerson, storageQuestList, admin) {
+            if (domItems.firstNameInput.value !== "" && domItems.lastNameInput.value !== "") {
+                if (!(domItems.firstNameInput.value === admin[0] && domItems.lastNameInput.value === admin[1])) {
+                    if (storageQuestList.getQuestionCollection().length > 0) {
+                        currPerson.fullName.push(domItems.firstNameInput.value);
+                        currPerson.fullName.push(domItems.lastNameInput.value);
+                        domItems.landingPageSection.style.display = "none";
+                        domItems.quizSection.style.display = "block";
+                        console.log(currPerson);
+                    } else {
+                        alert("Quiz is not ready, please contact to administrator")
+                    }
+                } else {
+                    domItems.landingPageSection.style.display = "none";
+                    domItems.adminPanelSection.style.display = "block";
+                }
+            } else {
+                alert("Please, enter your first name and last name");
+            }
+        },
+
+        finalResult: function (currPerson) {
+            domItems.finalScoreText.textContent = currPerson.fullName[0] + " " + currPerson.fullName[1] + ",Your final score is: " + currPerson.score;
+
+            domItems.quizSection.style.display = "none";
+            domItems.finalResultSection.style.display = "block";
+        },
+
+        addResultOnPanel: function (userData) {
+
+            var resultHTML;
+            domItems.resultsListWrapper.innerHTML = "";
+            for (var i = 0; i < userData.getPersonData.length; i++) {
+                resultHTML = '<p class="person person-' + i + '">' + userData.getPersonData()[i].firstName + " " + userData.getPersonData()[i].lastName + ' - ' + userData.getPersonData()[i].score + 'points</span><button id="delete-result-btn_' + userData.getPersonData()[i].id + '" class="delete-result-btn">Delete</button></p>';
+                console.log(domItems);
+                
+                domItems.resultsListWrapper.insertAdjacentHTML('afterbegin', resultHTML);
+            }
+
+        },
+
+        deleteResult: function (event, userData) {
+            var getId, personsArr;
+            personsArr = userData.getPersonData();
+            if ('delete-result-btn_'.indexOf(event.target.id)) {
+                getId = parseInt(event.target.id.split("_"))[1];
+
+                for (var i = 0; i < personsArr.length; i++) {
+                    if (personsArr[i].id === getId) {
+                        personsArr.splice(i, 1);
+                        userData.setPersonData(personsArr);
+                    }
+                }
+            }
+        },
+
+        clearResultList: function (userData) {
+
+            var conf;
+
+            if (userData.getPersonData() !== null) {
+
+                if (userData.getPersonData.length > 0) {
+
+                    conf = confirm("Warning! You will lose entire result list");
+
+                    if (conf) {
+                        userData.removePersonData();
+                        domItems.resultsListWrapper.innerHTML = "";
+                    }
+                }
             }
         }
-    }
-
-};
-
+    };
 })();
 
 
@@ -307,14 +519,117 @@ var controller = (function (quizCtrl, UICtrl) {
         UICtrl.editQuestList(e, quizController.getQuestionLocalStorage, UICtrl.addInputsDynamically, UICtrl.createQuestionList);
     });
 
-    selectedDomItems.questsClearBtn.addEventListener('click', function() {
+    selectedDomItems.questsClearBtn.addEventListener('click', function () {
         UICtrl.clearQuestList(quizCtrl.getQuestionLocalStorage);
+    });
+
+    UICtrl.displayQuestion(quizCtrl.getQuestionLocalStorage, quizCtrl.getQuizProgress);
+
+    UICtrl.displayProgress(quizCtrl.getQuestionLocalStorage, quizCtrl.getQuizProgress);
+
+    selectedDomItems.quizOptionsWrapper.addEventListener("click", function (e) {
+        var updatedOptionsDiv = selectedDomItems.quizOptionsWrapper.querySelectorAll("div");
+
+        for (var i = 0; i < updatedOptionsDiv.length; i++) {
+            if (e.target.className === 'choice-' + i) {
+                var answer = document.querySelector('.quiz-options-wrapper div p.' + e.target.className);
+                var answerResult = quizCtrl.checkAnswer(answer);
+                UICtrl.newDesign(answerResult, answer);
+
+                if(quizCtrl.isFinished()) {
+                    selectedDomItems.nextQuestBtn.textContent = 'Finish';
+                }
+                var nextQuestion = function (questData, progress) {
+                    if (quizCtrl.isFinished()) {
+                        // finish quiz
+                        quizCtrl.addPerson();
+                        UICtrl.finalResult(quizCtrl.getCurrPersonData);
+                    } else {
+                        UICtrl.resetDesign();
+                        quizCtrl.getQuizProgress.questionIndex++;
+                        UICtrl.displayQuestion(quizCtrl.getQuestionLocalStorage, quizCtrl.getQuizProgress);
+                        UICtrl.displayProgress(quizCtrl.getQuestionLocalStorage, quizCtrl.getQuizProgress);
+
+                    }
+                }
+                selectedDomItems.nextQuestBtn.onclick = function () {
+                    nextQuestion(quizCtrl.getQuestionLocalStorage, quizCtrl.getQuizProgress)
+                }
+            }
+        }
+
+    });
+
+    selectedDomItems.startQuizBtn.addEventListener("click", function () {
+        UICtrl.getFullName(quizCtrl.getCurrPersonData, quizCtrl.getQuestionLocalStorage, quizCtrl.getAdminFullName);
+    });
+
+    selectedDomItems.lastNameInput.addEventListener("focus", function () {
+        selectedDomItems.lastNameInput.addEventListener("keypress", function (e) {
+            if (e.keyCode === 13) {
+                UICtrl.getFullName(quizCtrl.getCurrPersonData, quizCtrl.getQuestionLocalStorage, quizCtrl.getAdminFullName);
+            }
+        })
+    });
+
+    console.log(quizCtrl.getPersonLocalStorage);
+    
+    UICtrl.addResultOnPanel(quizCtrl.getPersonLocalStorage);
+
+    selectedDomItems.resultsListWrapper.addEventListener("click", function () {
+
+        UICtrl.deleteResult(e, quizCtrl.getPersonLocalStorage)
+
+        UICtrl.addResultOnPanel(quizCtrl.getPersonLocalStorage);
+    });
+
+    selectedDomItems.clearResultsBtn.addEventListener("click", function () {
+        UICtrl.clearResultList(quizCtrl.getPersonLocalStorage);
+
     })
 
 })(quizController, UIController);
 
 
 
+// function Fox(age) {
+//     this.age = age || 100;
+//   }
+//   Fox.prototype.say = function (num) {
+//     console.log(this.age || 20 + Math.floor(Math.PI) * num);
+//   }
+//   var f = new Fox(10);
+//   f.say.call({}, 5);
+
+//   console.log('1');
+
+// setTimeout(function() {
+//   console.log('2');
+// }, 10);
+
+// setTimeout(function() {
+//   console.log('3');
+// }, 0);
+
+// console.log('4');
 
 
 
+
+
+// function Fox(color) {
+//     this.color = color;
+// }
+// Fox.prototype.speak = function() {
+//     console.log('I am ' + this.color);
+// };
+// var myFox = new Fox('blue');
+// setTimeout(myFox.speak, 1000);
+
+// const arr = [1, 2, 3, 4];
+// const [a, b] = arr;
+// console.log(a,b,d);s
+
+
+// const mapData = new Map();
+// console.log(mapData)
