@@ -45,11 +45,11 @@ var quizController = (function () {
         score: 0
     };
 
-    var adminFullName = ["John", "Smith"];
+    var adminFullName = ["N", "M"];
 
     var personLocalStorage = {
         setPersonData: function (newPersonData) {
-            localStorage.setItem("personData", JSON.stringify(newPersonData))
+            localStorage.setItem("personData", JSON.stringify(newPersonData));
         },
         getPersonData: function () {
             return JSON.parse(localStorage.getItem("personData"));
@@ -144,7 +144,7 @@ var quizController = (function () {
         },
 
         addPerson: function () {
-            var newPerson, personId;
+            var newPerson, personId, personData;
             if (personLocalStorage.getPersonData().length > 0) {
                 personId = personLocalStorage.getPersonData()[personLocalStorage.getPersonData().length - 1].id + 1;
             } else {
@@ -353,6 +353,7 @@ var UIController = (function () {
 
         clearQuestList: function (storageQuestList) { //access on LS
             if (storageQuestList.getQuestionCollection() !== null) {
+                console.log(storageQuestList);
                 if (storageQuestList.getQuestionCollection().length > 0) { //LENGTH OF QUESTION LIST ARRAY
                     var conf = confirm("Warning! You will lose entire question list");
 
@@ -448,7 +449,7 @@ var UIController = (function () {
 
             var resultHTML;
             domItems.resultsListWrapper.innerHTML = "";
-            for (var i = 0; i < userData.getPersonData.length; i++) {
+            for (var i = 0; i < userData.getPersonData().length; i++) {
                 resultHTML = '<p class="person person-' + i + '">' + userData.getPersonData()[i].firstName + " " + userData.getPersonData()[i].lastName + ' - ' + userData.getPersonData()[i].score + 'points</span><button id="delete-result-btn_' + userData.getPersonData()[i].id + '" class="delete-result-btn">Delete</button></p>';
                 console.log(domItems);
                 
@@ -461,12 +462,13 @@ var UIController = (function () {
             var getId, personsArr;
             personsArr = userData.getPersonData();
             if ('delete-result-btn_'.indexOf(event.target.id)) {
-                getId = parseInt(event.target.id.split("_"))[1];
-
+                getId = parseInt(event.target.id.split("_")[1]); //parse int da dobijemo id number,a ne str.
+                console.log(personsArr);
+                
                 for (var i = 0; i < personsArr.length; i++) {
                     if (personsArr[i].id === getId) {
                         personsArr.splice(i, 1);
-                        userData.setPersonData(personsArr);
+                        userData.setPersonData(personsArr); //setujemo arr sa obrisanim igracima
                     }
                 }
             }
@@ -477,8 +479,8 @@ var UIController = (function () {
             var conf;
 
             if (userData.getPersonData() !== null) {
-
-                if (userData.getPersonData.length > 0) {
+                //da popravimo can not read property of null, kad se klikne na clear list a nema nista u listi, takva greska izadje
+                if (userData.getPersonData().length > 0) {
 
                     conf = confirm("Warning! You will lose entire result list");
 
@@ -576,7 +578,7 @@ var controller = (function (quizCtrl, UICtrl) {
     
     UICtrl.addResultOnPanel(quizCtrl.getPersonLocalStorage);
 
-    selectedDomItems.resultsListWrapper.addEventListener("click", function () {
+    selectedDomItems.resultsListWrapper.addEventListener("click", function (e) {
 
         UICtrl.deleteResult(e, quizCtrl.getPersonLocalStorage)
 
